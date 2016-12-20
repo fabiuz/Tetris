@@ -1,0 +1,227 @@
+' *****************************************************************************************
+'	PROGRAMA:		BLOCKS
+' 	VERSÃO:			1.0
+'	AUTOR:			FÁBIO MOURA DE OLIVEIRA
+'	DATA: 			14/12/2016
+' 	DESCRIÇÃO:	ESTE PROGRAMA É UM JOGO DE COMPUTADOR SEMELHANTE AO JOGO CLÁSSICO BLOCKS.
+' *****************************************************************************************
+
+#COMPILE EXE
+#DIM ALL
+#INCLUDE "win32api.inc"
+
+' Nomenclatura do jogo:
+' Tabuleiro:	É o local onde os blocos são inseridos.
+' Célula:			Interseção entre linha e coluna do tabuleiro.
+' Bloco:			Um conjunto de células conectadas a uma outra célula vizinha
+'							formando um imagem.
+' Peça:				Região, geralmente, em forma quadrática, em que um bloco reside.
+
+
+' Constantes do jogo
+%CELULAS_POR_LINHA = 20
+%CELULAS_POR_COLUNA = 10
+%CELULAS_TOTAIS = %CELULAS_POR_LINHA * %CELULAS_POR_COLUNA
+
+%CELULA_LARGURA = 10
+%CELULA_ALTURA = 10
+%CELULA_COR_BORDA = %RGB_BLACK
+%CELULA_COR_PREENCHIMENTO = %RGB_WHITE
+
+%BLOCO_LARGURA = 10
+%BLOCO_ALTURA = 10
+
+%BLOCO_LINHAS = 3
+%BLOCO_COLUNAS = 3
+
+%JOGO_LARGURA = 700
+%JOGO_ALTURA = 700
+
+
+' Indica as coordenadas do canto superior em pixel.
+%TABULEIRO_COR_DE_FUNDO = %RGB_ROYALBLUE
+%TABULEIRO_COR_DA_GRADE = %RGB_WHITE
+%TABULEIRO_ESPACO_HORIZONTAL_ENTRE_CELULAS = 5
+%TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS = 5
+
+' Define o tabuleiro para o centro da tela
+%TABULEIRO_ESQUERDA = (%JOGO_LARGURA - ((%CELULA_LARGURA + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS) * %CELULAS_POR_COLUNA))/2
+%TABULEIRO_TOPO = 10
+
+
+
+type celulaPeca
+	celulas(1 to %BLOCO_LINHAS, 1 to %BLOCO_COLUNAS) as long
+	celulaCorPreenchimento as long
+end type
+
+
+' Vamos guarda as informações pertinentes a uma única célula.
+type celulaTabuleiro
+	X_Superior_Esquerda as long		' Posição X do canto superior esquerdo da célula.
+	Y_Superior_Esquerda as long     ' Posição Y do canto superior esquerdo da célula.
+	X_Inferior_Direita as long      ' Posicao X do canto inferior direito da célula.
+	Y_Inferior_Direita as long      ' Posicao Y do canto inferior direito da célula.
+	
+	celulaStatus as long			' Indica se a célula já está ocupada: 0, significa não ocupada
+	celulaCorPreenchimento as long	' Se a célula está ocupada, indica a cor do preenchimento.
+end type
+
+
+' Vamos preencher as peças
+sub PecasPreencher(byref pecas() as celulaPeca)
+	' Vamos verificar se existe algo no arranjo
+	if ubound(pecas()) - lbound(pecas()) + 1 = 0 then
+		end 1
+    end if
+	
+	' Peça: L
+	data "1", "1", "0"
+	data "1", "0", "0"
+	data "1", "0", "0"
+	
+	' Peça T
+	data "1", "1", "1"
+	data "0", "1", "0"
+	data "0", "0", "0"
+	
+	' Peça I
+	DATA "0", "1", "0"
+	DATA "0", "1", "0"
+	DATA "0", "1", "0"
+	
+	' Peça L e L invertido.
+	data "1", "0", "0"
+	data "1", "1", "0"
+	data "0", "1", "0"
+	
+	local uA, uB, uC as long
+	local indiceLerData as long
+	indiceLerData = 1
+	
+	for uA = lbound(pecas()) to ubound(pecas())
+		for uB = 1 to %BLOCO_LINHAS
+			FOR uC = 1 to %BLOCO_COLUNAS
+				pecas(uA).celulas(uB, uC) = val(read$(indiceLerData))
+				incr indiceLerData
+			next
+		next
+    next 
+	
+end sub
+
+
+'***********************************************************************************************
+
+
+FUNCTION PBMAIN () AS LONG	
+	
+	
+                                                      '
+	local janelaBloco as long, bitmapbloco as long
+	graphic window new "Tetris v1.0 - Autor Fábio Moura", 0, 0, %JOGO_LARGURA, %JOGO_ALTURA to janelaBloco
+	Graphic bitmap new 500, 500 to bitmapBloco 
+	
+	' Anexa contexto gráfico.
+	graphic attach janelaBloco, 0, redraw
+
+	' Cria um tabuleiro com várias células.
+	dim  tabuleiro (1 to %CELULAS_POR_LINHA, 1 TO %CELULAS_POR_COLUNA) as celulaTabuleiro
+	
+	' Cria 5 peças.
+	Dim pecas(1 to 4) as celulaPeca
+	' Preenche as peças
+	PecasPreencher(pecas())	
+	
+    ' Define as coordenadas das células do tabuleiro.
+	TabuleiroProjetarCoordenadas(tabuleiro())
+	
+	do
+		TabuleiroDesenharCelulas(tabuleiro())
+
+		sleep 5
+	loop while asc(graphic$(INKEY$)) <> 27
+
+END FUNCTION
+
+Sub TabuleiroProjetarCoordenadas(byref tabuleiro() as celulaTabuleiro)
+	local linha, coluna as long
+	
+	local celulaXSuperiorEsquerda as long
+	local celulaYSuperiorEsquerda as long
+	local celulaXInferiorDireita as long
+	local celulaYInferiorDireita as long
+
+  ' Define as coordenadas iniciais.
+	celulaXSuperiorEsquerda = %TABULEIRO_ESQUERDA
+	celulaYSuperiorEsquerda = %TABULEIRO_TOPO
+	celulaXInferiorDireita = celulaXSuperiorEsquerda + %CELULA_LARGURA
+	celulaYInferiorDireita = celulaYSuperiorEsquerda + %CELULA_ALTURA
+
+	' Desenhar células.
+	for linha = 1 to %CELULAS_POR_LINHA
+						
+		FOR coluna = 1 to %CELULAS_POR_COLUNA
+			tabuleiro(linha, coluna).X_Superior_Esquerda = celulaXSuperiorEsquerda
+			tabuleiro(linha, coluna).Y_Superior_Esquerda = celulaYSuperiorEsquerda
+			tabuleiro(linha, coluna).X_Inferior_Direita = celulaXInferiorDireita
+			tabuleiro(linha, coluna).Y_Inferior_Direita = celulaYInferiorDireita
+									
+			' Indica onde a próxima célula na horizontal, será desenhada.
+			celulaXSuperiorEsquerda = celulaXSuperiorEsquerda + %CELULA_LARGURA + %TABULEIRO_ESPACO_HORIZONTAL_ENTRE_CELULAS
+			' A posição y da célula superior esquerda e célula inferior direita não precisa ser alterada.
+			celulaXInferiorDireita = celulaXSuperiorEsquerda + %CELULA_LARGURA									
+		next coluna
+		
+		' Devemos resetar a posição x do canto superior da célula para a posição x 
+		' do lado esquerdo do tabuleiro.
+		celulaXSuperiorEsquerda = %TABULEIRO_ESQUERDA
+		' e a posição x do canto inferior direito da célula será igual
+		' a soma da posição x do lado esquerdo da célula + a largura da célula
+		celulaXInferiorDireita = celulaXSuperiorEsquerda + %CELULA_LARGURA
+		
+		' Como aqui, iremos avançar para a próxima linha, então, devemos calcular a nova posição
+		' y de onde a célula estará posicionada.
+		' Há dois posições de y, uma para o canto superior esquerdo e outro para o canto inferior direito.
+		' A nova posição y da célula será igual a atual posição de y superior esquerda mais
+		' o espaçamento entre células na vertical no tabuleiro mais a altura da célual
+		celulaYSuperiorEsquerda = celulaYSuperiorEsquerda + %CELULA_ALTURA + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
+		' A posição y da célula inferior direita será igual a soma da célula 'celulaYSuperiorEsquerda' mais
+		' a altura da célula.
+		celulaYInferiorDireita = celulaYSuperiorEsquerda + %CELULA_ALTURA
+		
+	NEXT linha
+	GRAPHIC REDRAW
+end sub
+
+
+'***********************************************************************************************
+'	Desenha as células do tabuleiro, as coordenadas de cada célula
+' já foram definidas.	
+'***********************************************************************************************
+
+sub TabuleiroDesenharCelulas(byref tabuleiro() as celulaTabuleiro)
+	local linha, coluna as long
+	
+	local celulaXSuperiorEsquerda as long
+	local celulaYSuperiorEsquerda as long
+	local celulaXInferiorDireita as long
+	local celulaYInferiorDireita as long
+
+	' Desenhar células.
+	for linha = 1 to %CELULAS_POR_LINHA
+				
+		FOR coluna = 1 to %CELULAS_POR_COLUNA
+			celulaXSuperiorEsquerda = tabuleiro(linha, coluna).x_superior_esquerda
+			celulaYSuperiorEsquerda = tabuleiro(linha, coluna).y_superior_esquerda
+			celulaXInferiorDireita = tabuleiro(linha, coluna).x_inferior_direita
+			celulaYInferiorDireita = tabuleiro(linha, coluna).y_inferior_direita
+			
+			GRAPHIC BOx (celulaXSuperiorEsquerda, celulaYSuperiorEsquerda) - _
+									(celulaXInferiorDireita, celulaYInferiorDireita), , %CELULA_COR_BORDA, %CELULA_COR_PREENCHIMENTO
+									
+		next coluna
+		
+	NEXT linha
+	GRAPHIC REDRAW
+end sub

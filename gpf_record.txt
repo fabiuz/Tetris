@@ -1,0 +1,51 @@
+Thread ID = 00001064   this thread is a secondary thread of this process
+
+A continuable Exception occurred at  0023:7703CECF in module ntdll.dll
+
+Load address of ntdll.dll : 77010000
+Process exe file : C:\Meus_Documentos\Powerbasic\Tetris\Tetris.exe
+Parent process : C:\PBWin10\ide_para_power_basic\jk-ide\jk-ide.exe
+
+
+Exception Code:  EXCEPTION_ACCESS_VIOLATION  (= C0000005)
+
+The thread tried to read from virtual address 00000014
+for which it does not have the appropriate access. 
+
+  -  No debug information available for this thread !
+
+
+Hexdump at CS:EIP (32 bytes starting at 7703CECF):
+66  8B  49  14  8A  50  07  0F  B7  F9  80  FA  05  0F  84  A2  
+C5  05  00  F6  C2  40  0F  85  A8  C5  05  00  8A  CA  80  E1  
+
+
+ContextFlags	0x0001007F  (all Registers are valid)
+
+EAX = 0080E0A8	CS = 00000023	ESP = 021DBF50	 DR0 = 	00000000
+EBX = 0080E0B0	DS = 0000002B	EBP = 021DBF64	 DR1 = 	00000000
+ECX = 00000000	ES = 0000002B			 DR2 = 	00000000
+EDX = 12485CAA	GS = 0000002B	EIP = 7703CECF	 DR3 = 	00000000
+EDI   = 007D2A20	FS = 00000053			 DR6 = 	00000000
+ESI   = 00310000	SS = 0000002B	EFlags = 00010246	 DR7 = 	00000000
+
+
+
+
+
+******************************************************************************************
+
+
+Thread ID = 00002510   this thread is the primary thread of this process
+
+This thread was stopped while executing source code line # 805
+in module "TETRIS.EXE (Tetris.bas)"
+
+
+
+******************************************************************************************
+
+
+Thread ID = 00001710   this thread is a secondary thread of this process
+
+No further debug information available ...

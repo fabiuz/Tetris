@@ -1,0 +1,1042 @@
+' *****************************************************************************************
+'   PROGRAMA:       TETRIS
+'   VERSÃO:         1.0
+'   AUTOR:          FÁBIO MOURA DE OLIVEIRA
+'   DATA:           14/12/2016
+'   DESCRIÇÃO:  ESTE PROGRAMA É UM JOGO DE COMPUTADOR SEMELHANTE AO JOGO CLÁSSICO BLOCKS.
+' *****************************************************************************************
+
+#COMPILE EXE
+#DIM ALL
+#INCLUDE "win32api.inc"
+
+' Nomenclatura do jogo:
+' Tabuleiro:    É o local onde os blocos são inseridos.
+' Célula:           Interseção entre linha e coluna do tabuleiro.
+' Bloco:            Um conjunto de células conectadas a uma outra célula vizinha
+'                           formando um imagem.
+' Peça:             Região, geralmente, em forma quadrática, em que um bloco reside.
+
+
+' Constantes do jogo
+%CELULAS_POR_LINHA = 50
+%CELULAS_POR_COLUNA = 20
+%CELULAS_TOTAIS = %CELULAS_POR_LINHA * %CELULAS_POR_COLUNA
+
+' Indica a quantidade de células em uma peça
+%PECA_CELULAS_POR_LINHA = 3
+%PECA_CELULAS_POR_COLUNA = 3
+%PECA_CELULAS_TOTAIS = %PECA_CELULAS_POR_LINHA * %PECA_CELULAS_POR_COLUNA
+
+' Indica a quantidade de linhas que a peça desloca pelo tabuleiro
+%PECA_DESLOCAMENTO_VERTICAL = 1
+%PECA_DESLOCAMENTO_HORIZONTAL = 1
+
+' Indica as dimensões de uma célula.
+%CELULA_LARGURA = 15
+%CELULA_ALTURA = 15
+%CELULA_COR_BORDA = %RGB_BLACK
+%CELULA_COR_PREENCHIMENTO = %RGB_WHITE
+
+%BLOCO_LARGURA = 10
+%BLOCO_ALTURA = 10
+
+%BLOCO_LINHAS = 3
+%BLOCO_COLUNAS = 3
+
+%JOGO_LARGURA = 700
+%JOGO_ALTURA = 700
+
+' Indica as coordenadas do canto superior em pixel.
+%TABULEIRO_COR_DE_FUNDO = %RGB_WHITE
+%TABULEIRO_COR_DA_GRADE = %RGB_BLACK
+%TABULEIRO_ESPACO_HORIZONTAL_ENTRE_CELULAS = 1
+%TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS = 1
+
+' Define o tabuleiro para o centro da tela
+%TABULEIRO_ESQUERDA = (%JOGO_LARGURA - ((%CELULA_LARGURA + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS) * %CELULAS_POR_COLUNA))/2
+%TABULEIRO_TOPO = 10
+
+%TABULEIRO_LINHAS = %CELULAS_POR_LINHA
+%TABULEIRO_COLUNAS = %CELULAS_POR_COLUNA
+
+' Este tipo armazena onde a peça
+' está localizada no tabuleiro.
+TYPE pecaPosicao
+    x_esquerda AS LONG              ' Posição X no tabuleiro, onde o lado esquerdo da peça se localiza.
+    x_direita AS LONG               ' Posicao X no tabuleiro, onde o lado direito da peça se localiza.
+    y_superior AS LONG              ' Posição Y no tabuleiro, onde o lado superior da peça se localiza.
+    y_inferior AS LONG              ' Posicao Y no tabuleiro, onde o lado inferior da peça se localiza.
+END TYPE
+
+' A peça é um dos componentes do jogo que guarda um conjunto de
+' células. A peça é disposta em uma região de lados iguais.
+' Na peça, um célula é identificada por 1 ou por 0.
+' O valor '1', significa, que a cor vai ser renderizada na
+' posição onde a célula será desenhada.
+' Será zero, se a cor não será renderizada.
+' Então, desta forma, no jogo Tetris, é possível ver aqueles
+' blocos de diversas formas.
+TYPE peca
+    ' Guarda a informação de cada célula da peça.
+    celulas(1 TO %BLOCO_LINHAS, 1 TO %BLOCO_COLUNAS) AS LONG
+
+    celulaCor AS LONG
+    posicao AS pecaPosicao
+END TYPE
+
+
+
+' Vamos guarda as informações pertinentes a uma única célula.
+TYPE celulaTabuleiro
+    X_Superior_Esquerda AS LONG     ' Posição X do canto superior esquerdo da célula.
+    Y_Superior_Esquerda AS LONG     ' Posição Y do canto superior esquerdo da célula.
+    X_Inferior_Direita AS LONG      ' Posicao X do canto inferior direito da célula.
+    Y_Inferior_Direita AS LONG      ' Posicao Y do canto inferior direito da célula.
+
+    celulaOcupada AS LONG           ' Indica se a célula já está ocupada: 0, significa não ocupada
+    celulaCor AS LONG   ' Se a célula está ocupada, indica a cor do preenchimento.
+END TYPE
+
+' Criar as peças a serem utilizadas no jogo.
+SUB PecasPreencher(BYREF pecas() AS peca)
+
+    DATA "1", "0", "0"
+    DATA "1", "1", "1"
+    DATA "0", "0", "1"
+
+
+
+   #IF 1
+
+
+
+    ' Peca pequenas
+    DATA "0", "0", "0"
+    DATA "0", "1", "0"
+    DATA "0", "0", "0"
+
+    DATA "0", "1", "0"
+    DATA "0", "1", "0"
+    DATA "0", "0", "0"
+
+    DATA "0", "1", "0"
+    DATA "0", "1", "0"
+    DATA "0", "1", "0"
+
+    ' FORMATO L ESQUERDO
+    DATA "1", "1", "0"
+    DATA "0", "1", "0"
+    DATA "0", "0", "0"
+
+    DATA "1", "1", "0"
+    DATA "0", "1", "0"
+    DATA "0", "1", "0"
+
+    ' FORMATO L DIREITO
+    DATA "0", "1", "1"
+    DATA "0", "1", "0"
+    DATA "0", "0", "0"
+
+    DATA "0", "1", "1"
+    DATA "0", "1", "0"
+    DATA "0", "1", "0"
+
+    ' FORMATO T
+    DATA "1", "1", "1"
+    DATA "0", "1", "0"
+    DATA "0", "0", "0"
+
+    DATA "1", "1", "1"
+    DATA "0", "1", "0"
+    DATA "0", "1", "0"
+
+    ' FORMATO QUADRADO
+    DATA "1", "1", "1"
+    DATA "1", "0", "1"
+    DATA "1", "1", "1"
+
+    ' FORMATO QUADRADO PREENCHIDO
+    DATA "1", "1", "1"
+    DATA "1", "1", "1"
+    DATA "1", "1", "1"
+
+    ' FORMATO L DOS CANTOS
+    DATA "1", "1", "0"
+    DATA "1", "0", "0"
+    DATA "0", "0", "0"
+
+    ' FORMATO L DOS CANTOS
+    DATA "1", "1", "1"
+    DATA "1", "0", "0"
+    DATA "1", "0", "0"
+
+    ' FORMATO L
+    DATA "1", "1", "1"
+    DATA "1", "0", "0"
+    DATA "0", "0", "0"
+
+    ' FORMATO L
+    DATA "1", "1", "1"
+    DATA "0", "0", "1"
+    DATA "0", "0", "0"
+
+    ' FORMATO L
+    DATA "1", "0", "0"
+    DATA "1", "1", "1"
+    DATA "0", "0", "0"
+
+    ' FORMATO L
+    DATA "0", "0", "1"
+    DATA "1", "1", "1"
+    DATA "0", "0", "0"
+
+    ' FORMATO C OU U
+    DATA "1", "1", "0"
+    DATA "0", "1", "0"
+    DATA "1", "1", "0"
+
+    ' FORMATO C OU U INVERTIDO
+    DATA "1", "1", "0"
+    DATA "1", "0", "0"
+    DATA "1", "1", "0"
+
+    ' FORMATO H
+    DATA "1", "1", "1"
+    DATA "0", "1", "0"
+    DATA "1", "1", "1"
+
+    ' FORMATO ESCADA
+    DATA "1", "0", "0"
+    DATA "1", "1", "0"
+    DATA "0", "1", "0"
+
+    DATA "1", "0", "0"
+    DATA "1", "1", "1"
+    DATA "0", "0", "1"
+
+    #ENDIF
+
+    ' Se inserimos novos dados, simplesmente, o
+    ' arranjo, será criado com a quantidade correta.
+    ' Só iremos pegar quantidades múltiplas da constantes %PECA_CELULAS_TOTAIS
+    LOCAL pecasQuantidade AS LONG
+    pecasQuantidade = INT(DATACOUNT / %PECA_CELULAS_TOTAIS)
+    REDIM pecas(1 TO pecasQuantidade)
+
+    LOCAL uA, uB, uC AS LONG
+    LOCAL indiceLerData AS LONG
+    indiceLerData = 1
+
+    FOR uA = LBOUND(pecas()) TO UBOUND(pecas())
+        FOR uB = 1 TO %BLOCO_LINHAS
+            FOR uC = 1 TO %BLOCO_COLUNAS
+                pecas(uA).celulas(uB, uC) = VAL(READ$(indiceLerData))
+                INCR indiceLerData
+            NEXT
+        NEXT
+    NEXT
+
+    LOCAL strTexto AS STRING
+    FOR uA = 1 TO %PECA_CELULAS_POR_LINHA
+        FOR uB = 1 TO %PECA_CELULAS_POR_COLUNA
+            strTexto += FORMAT$(pecas(1).celulas(uA, uB))
+        NEXT uB
+        strTexto += $CRLF
+    NEXT uA
+    'MSGBOX strTexto, %MB_ICONASTERISK
+
+
+END SUB
+
+
+'***********************************************************************************************
+'   Sorte uma peça e retorna ela.
+'***********************************************************************************************
+SUB Peca_Sortear(BYREF pecas() AS peca, BYREF pecaAtual AS peca)
+
+
+    ' Vamos sortear uma peça qualquer.
+    DIM numeroAleatorio AS LONG
+    numeroAleatorio = RND(LBOUND(pecas()), UBOUND(pecas()))
+    'numeroAleatorio = 1
+
+    ' Vamos criar um arranjo bidimensional para guardar os valores
+    ' O tipo peca, tem um arranjo bidimensional, de nome celulas, então devemos
+    ' obter o limite inferior e superior das dimensões 1 e 2, para podermos
+    ' criar o arranjo com o tamanho correto.
+    LOCAL pecaValores() AS LONG
+    REDIM pecaValores(1 TO %PECA_CELULAS_POR_LINHA, 1 TO %PECA_CELULAS_POR_COLUNA)
+
+    ' Agora, carrega a peça, que será retornada da função
+    LOCAL linha, coluna AS LONG
+
+    FOR Linha = LBOUND(pecaValores(), 1) TO UBOUND(pecaValores(), 1)
+        FOR coluna = LBOUND(pecaValores(), 2) TO UBOUND(pecaValores(), 2)
+            pecaValores(linha,coluna) = pecas(numeroAleatorio).celulas(linha, coluna)
+        NEXT coluna
+    NEXT ulinha
+
+
+    ' Agora, carrega o arranjo que carregará os valores
+    FOR Linha = LBOUND(pecaValores(), 1) TO UBOUND(pecaValores(), 1)
+        FOR coluna = LBOUND(pecaValores(), 2) TO UBOUND(pecaValores(), 2)
+            pecaAtual.celulas(linha,coluna) = pecaValores(linha, coluna)
+        NEXT coluna
+    NEXT ulinha
+
+    ' Sortea uma cor para as células da peça.
+    LOCAL peca_cor AS LONG
+    peca_cor = CHOOSE(RND(1, 7), %RGB_BLUE, %RGB_CHOCOLATE, %RGB_CYAN, %RGB_DARKRED, %RGB_RED, %RGB_YELLOW, %RGB_GREEN)
+
+    pecaAtual.celulacor = peca_cor
+
+    ' Posicionar tabuleiro centralizado horizontalmente
+    pecaAtual.posicao.x_Esquerda = INT((%TABULEIRO_COLUNAS - %PECA_CELULAS_POR_COLUNA)/ 2)
+    pecaAtual.posicao.x_Direita = pecaAtual.posicao.x_Esquerda + %PECA_CELULAS_POR_COLUNA - 1
+
+    ' Começar na primeira linha do tabuleiro.
+    pecaAtual.posicao.y_Superior =  1
+    pecaAtual.posicao.y_Inferior =  pecaAtual.posicao.y_Superior + %PECA_CELULAS_POR_LINHA - 1
+
+END SUB
+
+' Gira a peca
+SUB Peca_Girar(BYREF pecaAtual AS peca)
+    LOCAL pecaTemp AS peca
+
+    ' Girar sempre pra direita.
+
+
+
+
+END SUB
+
+
+' Esta função verifica se todas as células de uma ou mais colunas da peça,
+' começando da coluna 1, se tais células colidem com as células respectivas no tabuleiro.
+' A quantidade de colunas a serem analisadas é igual a quantidade de deslocamento
+' que uma peça faz em um único movimento.
+' Este valor de deslocamento da peça é armazenado na variável %PECA_DESLOCAMENTO_HORIZONTAL
+' Retorna 1 se colidiu, 0 caso contrário.
+FUNCTION peca_colidiu_a_esquerda(BYREF tabuleiro() AS celulatabuleiro, BYVAL pecaAtual AS peca) AS LONG
+    ' Indica as coordenadas da célula na peça.
+    LOCAL pecaLinha AS LONG, pecaColuna AS LONG
+
+    ' Indica as coordenadas da peça no tabuleiro.
+    LOCAL xPeca AS LONG, yPeca AS LONG
+
+    ' Indica quantas colunas já foram analisadas.
+    LOCAL colunasAnalisadas AS LONG
+    colunasAnalisadas = 1
+
+    ' Indica se a coluna tem pelo menos uma célula com valor 1.
+    ' Isto serve para identificar se estão comparando a colisão com
+    ' uma célula de valor 1.
+    LOCAL colunaTemValorUm AS LONG
+
+
+    pecaColuna = 1
+
+    ' Aqui, iremos fazer diferente, iremos percorrer, todas as linhas de uma única
+    ' colunas em seguida, a próxima coluna e assim por diante.
+    FOR xPeca = pecaAtual.posicao.x_Esquerda TO pecaATual.posicao.x_Direita STEP 1
+
+        pecaLinha = 1
+        FOR yPeca = pecaAtual.posicao.y_Superior TO pecaAtual.posicao.y_Inferior STEP 1
+            ' Vamos verificar se há colisão.
+            IF yPeca < 1 THEN
+                EXIT FOR
+            END IF
+
+            ' Vamos verificar se há alguma colisão.
+            IF tabuleiro(yPeca, xPeca).celulaOcupada = 1 AND pecaAtual.celulas(pecaLinha, pecaColuna) = 1 THEN
+                    FUNCTION = 1
+					colunaTemValorUm = 1
+            END IF
+
+            ' Vamos verificar se há pelo menos uma célula da coluna com valor 1
+            IF pecaAtual.celulas(pecaLinha, pecaColuna) = 1 THEN
+                colunaTemValorUm = 1
+            END IF
+
+            INCR pecaLinha
+        NEXT yPeca
+
+        ' Incrementa coluna
+        INCR pecaColuna
+
+        ' Incrementa a variável colunasAnalisadas somente se
+        ' houve pelo menos uma célula com valor 1.
+        IF colunaTemValorUm = 1 THEN
+            INCR colunasAnalisadas
+        END IF
+
+        ' Uma peça se move 1 ou mais colunas em um único movimento.
+        ' Então, devemos analisar a mesma quantidade de colunas.
+        IF colunasAnalisadas > %PECA_DESLOCAMENTO_VERTICAL THEN
+            EXIT FOR
+        END IF
+    NEXT
+
+    'FUNCTION = 0
+END FUNCTION
+
+' Esta função verifica se todas as células de uma ou mais colunas da peça,
+' começando da coluna 1, se tais células colidem com as células respectivas no tabuleiro.
+' A quantidade de colunas a serem analisadas é igual a quantidade de deslocamento
+' que uma peça faz em um único movimento.
+' Este valor de deslocamento da peça é armazenado na variável %PECA_DESLOCAMENTO_HORIZONTAL
+' Retorna 1 se colidiu, 0 caso contrário.
+FUNCTION peca_colidiu_a_direita(BYREF tabuleiro() AS celulatabuleiro, BYVAL pecaAtual AS peca) AS LONG
+    ' Indica as coordenadas da célula na peça.
+    LOCAL pecaLinha AS LONG, pecaColuna AS LONG
+
+    ' Indica as coordenadas da peça no tabuleiro.
+    LOCAL xPeca AS LONG, yPeca AS LONG
+
+    ' Indica quantas colunas já foram analisadas.
+    LOCAL colunasAnalisadas AS LONG
+    colunasAnalisadas = 1
+
+    ' Indica se a coluna tem pelo menos uma célula com valor 1.
+    ' Isto serve para identificar se estão comparando a colisão com
+    ' uma célula de valor 1.
+    LOCAL colunaTemValorUm AS LONG
+
+
+    pecaColuna = %PECA_CELULAS_POR_COLUNA
+
+    ' Aqui, iremos fazer diferente, iremos percorrer, todas as linhas de uma única
+    ' colunas em seguida, a próxima coluna e assim por diante.
+    FOR xPeca = pecaAtual.posicao.x_direita TO pecaATual.posicao.x_esquerda STEP -1
+
+        pecaLinha = 1
+        FOR yPeca = pecaAtual.posicao.y_Superior TO pecaAtual.posicao.y_Inferior STEP 1
+            ' Vamos verificar se há colisão.
+            IF yPeca < 1 THEN
+                EXIT FOR
+            END IF
+
+            ' Vamos verificar se há alguma colisão.
+            IF tabuleiro(yPeca, xPeca).celulaOcupada = 1 AND pecaAtual.celulas(pecaLinha, pecaColuna) = 1 THEN
+                    FUNCTION = 1
+                    EXIT FUNCTION
+            END IF
+
+            ' Vamos verificar se há pelo menos uma célula da coluna com valor 1
+			' Se houver que dizer que pode ocorrer uma colisão
+			' Só começaremos a contabilizar uma linha se houve colisão de houver
+			' pelo menos uma célula com valor 1.
+            IF pecaAtual.celulas(pecaLinha, pecaColuna) = 1 THEN
+                colunaTemValorUm = 1
+            END IF
+
+            INCR pecaLinha
+        NEXT yPeca
+
+        ' Incrementa coluna
+        decr pecaColuna
+
+        ' Incrementa a variável colunasAnalisadas somente se
+        ' houve pelo menos uma célula com valor 1, pois, se uma coluna
+		' está vazia não haverá colisão.
+        IF colunaTemValorUm = 1 THEN
+            INCR colunasAnalisadas
+        END IF
+
+        ' Uma peça se move 1 ou mais colunas em um único movimento.
+        ' Então, devemos analisar a mesma quantidade de colunas.
+		' Por exemplo, se ela move duas colunas por vez, então devemos 
+		' analisar duas colunas da peça, para haverá uma colisão deve
+		' haver pelo menos uma coluna com uma célula valor 1.
+        IF colunasAnalisadas > %PECA_DESLOCAMENTO_VERTICAL THEN
+            EXIT FOR
+        END IF
+    NEXT
+
+    FUNCTION = 0
+END FUNCTION
+
+
+
+
+
+
+
+
+'***********************************************************************************************
+
+
+
+'***********************************************************************************************
+' A função abaixo verifica se a próxima linha, à esquerda, a direita, ou abaixo, colidem
+' Eu devo verificar a colisão somente com os cantos, e não com a parte interna da peça.
+' A peça desce uma linha por vez, isto que dizer, que devemos, analisar somente a próxima linha
+' Ou, se o usuário deslocar a peça pra a esquerda ou para a direita, é um incremento para a coluna
+' à esquerda ou a direita.
+' Quando implementei inicialmente, a função, estava fazendo a lógica de colisão errada, pois
+' estava considerando todas as células.
+' Ou seja, quando a peça é sorteadas, a célula do tabuleiro é definido o valor 1
+' se a célula da peça correspondente é também 1, isto quer dizer que, se movermos 1 linha ou
+' 1 coluna por vez, ao compararmos todas as células na nova posição com as células já no tabuleiro
+' haverá sempre uma colisão.
+'***********************************************************************************************
+FUNCTION peca_colidiu(BYREF tabuleiro() AS celulaTabuleiro, BYVAL pecaAtual AS peca) AS LONG
+    LOCAL pecaLinha, pecaColuna AS LONG
+    LOCAL xPeca AS LONG, yPeca AS LONG
+
+    LOCAL linhasVerificadas AS LONG
+	local colunaTemValorUm as long
+	
+	#IF 0
+
+    ' Verificar as linhas inferiores, pois a peça se desloca de cima para baixo.
+    ' Ela se desloca em um único movimento, em um valor definida na variável %PECA_DESLOCAMENTO_VERTICAL.
+    ' Então, devemos verificar somente a quantidade de linhas definidas na variável %PECA_DESLOCAMENTO_VERTICAL.
+    pecaLinha = %PECA_CELULAS_POR_LINHA
+    linhasVerificadas = 1
+
+'   ' Devemos identificar se uma linha a ser analisada tem célula preenchida
+    ' Pois, senão pode haver bug, uma peça sobrepondo a outra.
+    LOCAL linhaTemCelulaPreenchida AS LONG
+	local linhaTemValorUm as long
+
+
+    ' O loop verifica célula da peça na parte inferior, primeiro, com a célula correspondente
+    ' no tabuleiro, em seguida, verifica, uma linha acima, com a linha anterior da peça.
+    FOR yPeca = pecaAtual.posicao.y_Inferior TO pecaAtual.posicao.y_Superior STEP -1
+
+        pecaColuna = 1
+
+        FOR xPeca = pecaAtual.posicao.x_Esquerda TO pecaAtual.posicao.x_Direita STEP 1
+            ' Se a linha atual da peça está fora do tabuleiro, sair do loop.
+            IF yPeca < 1 THEN
+                EXIT FOR
+            END IF
+
+            ' Vamos verificar se há alguma colisão.
+            IF tabuleiro(yPeca, xPeca).celulaOcupada = 1 AND pecaAtual.celulas(pecaLinha, pecaColuna) = 1 THEN
+                    function = 1
+					exit function
+            END IF
+			
+			if pecaAtual.celulas(pecaLinha
+			
+			
+
+            INCR pecaColuna
+        NEXT pecacoluna
+
+        ' Sempre estamos fazendo a análise as células da peça, da parte inferior para a superior.
+        ' Então, devemos diminuir.
+        DECR pecaLinha
+		
+        IF linhaTemValorUm = 1 THEN
+            INCR linhasVerificadas
+        END IF
+        IF linhasVerificadas > %PECA_DESLOCAMENTO_VERTICAL THEN
+            EXIT FOR
+        END IF
+
+    NEXT pecalinha
+
+	#ENDIF
+	
+    ' Quando a peça se desloca para baixo, devermos verificar
+	' se as células com valor 1 de cada linha colidem com as células
+	' respectivas na nova posição que também tem o valor 1.
+	' As peças se deslocam 1 ou mais linhas em um único movimento,
+	' a quantidade de movimento é igual ao valor da constante '%PECA_DESLOCAMENTO_VERTICAL'
+	' Como a peça está descendo, iremos verificar em cada coluna, as células
+	' das linhas desta coluna, começando da linha inferior e subindo uma linha, por vez,
+	' Iremos analisar começando da linha inferior da peça e subir uma linha por vez, em uma única coluna,
+	' quando a primeira célula de valor 1 for localizada, iremos definir
+	' a variável 'colunaTemValorUm' para o valor 1, então, em seguida, continuando
+	' na mesma coluna, continuaremos a análise, mas agora, que a variável 'colunaTemValorUm'
+	' tem o valor 1, cada célula analisada, independente de ter valor 1 ou não
+	' será contabilizada, a contabilização será interrompida quando atingirmos o valor
+	' igual ao valor definido na constante '%PECA_DESLOCAMENTO_VERTICAL', ou se todas
+	' as células da primeira coluna terem sido analisadas.
+	' Em seguida, iremos para a próxima coluna, resetamos a variável 'colunaTemValorUm' para zero
+	' e em seguida, começando a análise começando da linha inferior para superior.
+	' Tal qual descrito anteriormente.	
+
+	' Vamos fazer assim, iremos analisar da parte inferior para a parte superior
+	' todas as linhas de uma única coluna, geralmente da esquerda pra direita
+	' Quando encontrarmos a primeira célula que tem o valor 1, iremos contabilizar
+	' como a primeira linha analisada, em seguida, iremos analisar as próximas linhas
+	' e elas serão contabilizadas independente se houver 1 ou zero.
+	' As células das linhas será interrompida a análise, se a quantidade contabilizada 
+	' for igual ao valor da constante '%PECA_DESLOCAMENTO_VERTICAL'
+	
+	' Vamos analisar a peça da esquerda pra direita, então começaremos na coluna 1 da peça.
+	pecaColuna = 1	
+		
+	for xPeca = pecaAtual.posicao.x_Esquerda to pecaAtual.posicao.X_Direita step 1		
+		
+		' Antes de entrar no loop, devemos definir que não encontramos ainda
+		' um célula na coluna com valor 1.
+		colunaTemValorUm = 0
+		
+		' Iremos analisar da linha inferior para a linha superior, afinal, 
+		' a peça se desloca para baixo. Então devemos verificar se haverá colisão
+		' na parte inferior primeiro.
+		for yPeca = pecaAtual.posicao.y_Inferior to pecaAtual.posicao.y_Superior step -1
+			' A peça começará iniciamente fora do tabuleiro, então isto pode ocorrer.
+			if yPeca < 1 then
+				exit for
+			end if
+			
+			' Aqui, detectarmos a colisão, se houver, iremos sair do sub, não precisamos
+			' analisar mais células.
+			if tabuleiro(yPeca, xPeca).celulaOcupada = 1 and pecaAtual.celulas(pecaLinha, pecaColuna)
+			
+        next ypeca			
+    next xpeca
+	
+	
+	
+
+END FUNCTION
+
+
+
+'***********************************************************************************************
+' Este sub, altera a posição, para indicar onde a peça deve ser posicionada no tabuleiro
+' Este sub, não verifica se a células na nova posição colidem com células já ocupadas no tabuleiro.
+SUB peca_alterar_pra_esquerda(BYREF pecaAtual AS peca)
+    IF pecaAtual.posicao.x_Esquerda > 1 THEN
+        DECR pecaAtual.posicao.x_Esquerda
+        ' Devemos decrementar 1, pois, o índice começa em 1.
+        pecaAtual.posicao.x_Direita = pecaAtual.posicao.x_Esquerda + %PECA_CELULAS_POR_COLUNA - 1
+    END IF
+END SUB
+
+'***********************************************************************************************
+' Este sub, altera a posição, para indicar onde a peça deve ser posicionada no tabuleiro
+' Este sub, não verifica se a células na nova posição colidem com células já ocupadas no tabuleiro.
+SUB peca_alterar_pra_direita(BYREF pecaAtual AS peca)
+    IF pecaAtual.posicao.x_Direita < %TABULEIRO_COLUNAS THEN
+        INCR pecaAtual.posicao.x_Direita
+        ' Devemos incrementar em 1, pois o índice basea-se em 1.
+        pecaAtual.posicao.x_Esquerda = pecaAtual.posicao.x_Direita - %PECA_CELULAS_POR_COLUNA + 1
+    END IF
+END SUB
+
+' Este sub, altera a posição, para indicar onde a peça deve ser posicionada no tabuleiro
+' Este sub, não verifica se a células na nova posição colidem com células já ocupadas no tabuleiro.
+SUB peca_alterar_pra_baixo(BYREF pecaAtual AS peca)
+    IF pecaAtual.posicao.y_Inferior <= %TABULEIRO_LINHAS THEN
+        INCR pecaAtual.posicao.y_Inferior
+        ' Devemos incrementar em 1, pois o índice basea-se em 1.
+        pecaAtual.posicao.y_Superior = pecaAtual.posicao.y_Inferior - %PECA_CELULAS_POR_LINHA + 1
+    END IF
+END SUB
+
+' Este sub, altera a posição, para indicar onde a peça deve ser posicionada no tabuleiro
+' Este sub, não verifica se a células na nova posição colidem com células já ocupadas no tabuleiro.
+SUB peca_alterar_pra_cima(BYREF pecaAtual AS peca)
+    IF pecaAtual.posicao.y_Superior > 1 THEN
+        DECR pecaAtual.posicao.y_Superior
+        ' Devemos incrementar em 1, pois o índice basea-se em 1.
+        pecaAtual.posicao.y_Inferior = pecaAtual.posicao.y_Superior + %PECA_CELULAS_POR_LINHA - 1
+    END IF
+END SUB
+
+' Devemos apagar o rastro da célula quando ela desloca para baixo.
+' Quando ela desloca para baixo, o rastro fica na parte superior, então devemos
+' evitar que este rastro apareça no tabuleiro.
+' A quantidade de linhas no tabuleiro que será apagada, será igual a quantidade
+' de deslocamento em um único movimento que a peça faz ao descer, por exemplo, se a peça
+' se move 2 linhas por vezes, pra baixo, iremos apagar 2 linhas na parte superior.
+' O que iremos fazer simplesmente, é definir as células de cada linha para o valor '0'
+' se a célula correspondente na peça tiver o valor 1.
+SUB peca_apagar_rastro_superior(BYREF tabuleiro() AS celulaTabuleiro, BYREF pecaAnterior AS peca)
+    ' Indica as coordenadas da célula na peça.
+    LOCAL pecaLinha AS LONG, pecaColuna AS LONG
+
+    ' Indica as coordenadas da peça no tabuleiro.
+    LOCAL xPeca AS LONG, yPeca AS LONG
+
+    ' Indica a quantidade de linhas já analisadas
+    ' Só iremos analisar a quantidade de linhas igual a quantidade de
+    ' linhas que a peça se move em um único movimento.
+    'LOCAL linhasAnalisadas AS LONG
+    'linhasAnalisadas = 1
+
+    ' Vamos analisar a linha começando da parte superior, afinal, a peça está descendo
+    ' e o rastro está na parte de cima.
+    pecaLinha = 1
+    FOR yPeca = pecaAnterior.posicao.y_Superior TO pecaAnterior.posicao.y_inferior STEP 1
+        ' Só apagar rastro dentro do tabuleiro, pois, a peça começa fora do tabuleiro.
+        IF yPeca < 1 THEN
+            EXIT FOR
+        END IF
+
+        ' Percorre da esquerda pra direita e só apaga, se a célula do tabuleiro e
+        ' a célula da peça for 1, por que isto, pois pode acontecer de já existir
+        ' célula com valor 1, mas vir de outra peça que já foi colocada no tabuleiro.
+        pecaColuna = 1
+        FOR xPeca = pecaAnterior.posicao.x_Esquerda TO pecaAnterior.posicao.x_Direita STEP 1
+            ' Apga a célula.
+            IF tabuleiro(yPeca, xPeca).celulaOcupada = 1 AND pecaAnterior.celulas(pecaLinha, pecaColuna) = 1 THEN
+                tabuleiro(yPeca, xPeca).celulaOcupada = 0
+            END IF
+
+            INCR pecaColuna
+        NEXT pecacoluna
+
+        ' Vai pra próxima linha da peça.
+        INCR pecaLinha
+
+    NEXT
+
+END SUB
+
+
+
+
+
+
+' Se a alteração de posição da peça é válida, então devemos mover a peça na tabuleiro.
+SUB peca_alterar_definitivo(BYREF tabuleiro() AS celulaTabuleiro, BYREF pecaAtual AS peca, BYREF pecaAnterior AS peca)
+    ' Vamos definir as células no tabuleiro onde a peça está.
+    ' A variável pecaAnterior armazena as coordenadas, antes da alteração da posição da peça
+    ' Então, fica fácil, fazer isto e em seguida, usamos, as novas coordenadas da peça atual.
+
+    LOCAL pecaLinha, pecaColuna AS LONG
+    LOCAL xPeca AS LONG, yPeca AS LONG
+
+
+    ' *********************************************************************************
+    '   Definir nova posição da peça no tabuleiro
+    pecaLinha = 3
+    FOR yPeca = pecaAtual.posicao.y_Inferior TO pecaAtual.posicao.y_Superior STEP -1
+        ' A peça pode está fora do tabuleiro, se é uma nova peça
+        ' lançada na primeira linha do tabuleiro.
+        IF yPeca < 1 THEN
+            EXIT FOR
+        END IF
+
+        pecaColuna = 1
+
+        FOR xPeca = pecaAtual.posicao.x_Esquerda TO pecaAtual.posicao.x_Direita STEP 1
+            ' Se a célula da peça é 1 e a célula de destino é zero, definir a célula do
+            ' tabuleiro para 1, 1 indica que quando for desenhar o tabuleiro, a célula com valor
+            ' 1, será desenhada.
+            IF pecaAtual.celulas(pecaLinha, pecaColuna) = 1 AND tabuleiro(yPeca, xPeca).celulaOcupada = 0 THEN
+                tabuleiro(yPeca, xPeca).celulaOcupada = 1
+                tabuleiro(yPeca, xPeca).celulaCor = pecaAtual.celulacor
+            END IF
+
+            ' Isto aqui, nunca deve acontecer
+            IF pecaAtual.celulas(pecaLinha, pecaColuna) = 1 AND tabuleiro(yPeca, xPeca).celulaOcupada = 1 THEN
+                'tabuleiro(xPeca, yPeca).celulaOcupada = 1
+                'tabuleiro(xPeca, yPeca).celulaCor = pecaAtual.celulacor
+                'MsgBox "Isto não deveria ocorrer.", %MB_ICONERROR
+            END IF
+
+
+            INCR pecaColuna
+        NEXT pecacoluna
+
+        ' Decrementa a linha da peça, como começamos da última linha, pela a linha
+        ' acima.
+        DECR pecaLinha
+
+    NEXT pecalinha
+
+
+
+END SUB
+
+
+'***********************************************************************************************
+SUB peca_Copiar(BYREF pecaAnterior AS peca, BYREF pecaAtual AS peca)
+    pecaAnterior.posicao.x_Esquerda = pecaAtual.posicao.x_Esquerda
+    pecaAnterior.posicao.x_Direita = pecaAtual.posicao.x_Direita
+    pecaAnterior.posicao.y_Inferior = pecaAtual.posicao.y_Inferior
+    pecaAnterior.posicao.y_Superior = pecaAtual.posicao.y_Superior
+    pecaAnterior.celulaCor = pecaAtual.celulacor
+
+    LOCAL pecaLinha, pecaColuna AS LONG
+    FOR pecaLinha = 1 TO %PECA_CELULAS_POR_LINHA
+        FOR pecaColuna = 1 TO %PECA_CELULAS_POR_COLUNA
+            pecaAnterior.celulas(pecalinha, pecaColuna) = pecaAtual.celulas(pecalinha, pecaColuna)
+        NEXT pecaColuna
+    NEXT pecalinha
+
+END SUB
+
+
+'***********************************************************************************************
+
+
+FUNCTION PBMAIN () AS LONG                            '
+    LOCAL janelaBloco AS LONG, bitmapbloco AS LONG
+    GRAPHIC WINDOW NEW "Tetris v1.0 - Autor Fábio Moura", 0, 0, %JOGO_LARGURA, %JOGO_ALTURA TO janelaBloco
+    GRAPHIC BITMAP NEW 500, 500 TO bitmapBloco
+    GRAPHIC ATTACH janelaBloco, 0, redraw
+
+    ' Cria um tabuleiro com várias células.
+    ' A linha 0, terá sempre as células definidas pra 1, para que
+    ' possarmos evitar que a peça saia do tabuleiro, ela não está visível
+    DIM  tabuleiro (1 TO %CELULAS_POR_LINHA + 1, 1 TO %CELULAS_POR_COLUNA) AS celulaTabuleiro
+
+    ' Define as coordenadas das células do tabuleiro.
+    TabuleiroProjetarCoordenadas(tabuleiro())
+    Tabuleiro_ZerarCelulas(tabuleiro())
+
+
+    ' Cria as peças e a preenche.
+    LOCAL pecas() AS peca
+    PecasPreencher(pecas())
+
+    LOCAL pecaAtual AS peca, pecaAnterior AS peca
+
+    Peca_Sortear(pecas(), pecaAtual)
+    pecaAnterior = pecaAtual
+
+    ' Gravar a primeira coordenada
+    'peca_alterar_definitivo(tabuleiro(), pecaAtual, pecaAnterior)
+
+    DIM pecaContador AS LONG
+    pecaContador = 1
+
+
+    LOCAL strTextoAnterior AS STRING
+    DO
+        TabuleiroDesenharCelulas(tabuleiro())
+
+        LOCAL strTexto AS STRING
+		
+		strTexto = GRAPHIC$(INKEY$)
+		IF ASC(strTexto) = 27 THEN
+			EXIT DO
+		END IF
+		
+        ' Verifica se o usuário pressionou a seta de direçao para a esquerda.
+        ' Se sim, deslocar a peça para a esquerda.
+        ' Mas devemos nos certificar se a pasta não vai colidir.
+        IF ASC(MID$(strTexto, 2, 1)) = 75 THEN
+            ' Alterar temporariamente a posição.
+            peca_copiar(pecaAnterior, pecaAtual)
+            peca_alterar_pra_esquerda(pecaAtual)
+
+            ' Verifica se há colisão a esquerda, se houver reverter.
+            IF peca_colidiu_a_esquerda(tabuleiro(), pecaAtual) = 1 THEN
+                peca_alterar_pra_direita(pecaAtual)
+				'peca_alterar_definitivo(tabuleiro(), pecaAtual, pecaAnterior)				
+            ELSE
+				peca_apagar_rastro_superior(tabuleiro(), pecaAnterior)
+				peca_alterar_definitivo(tabuleiro(), pecaAtual, pecaAnterior)
+				'TabuleiroDesenharCelulas(tabuleiro())
+			end if
+
+        END IF
+
+        ' Verifica se o usuário pressionou a seta de direçao para a direita.
+        IF ASC(MID$(strTexto, 2, 1)) = 77 THEN
+            ' Alterar temporariamente a posição.
+            peca_copiar(pecaAnterior, pecaAtual)
+            peca_alterar_pra_direita(pecaAtual)
+
+            ' Se houve colisão a direita, devemos retornar as coordenadas
+			' da peça pra a esquerda.
+            IF peca_colidiu(tabuleiro(), pecaAtual) = 1 THEN
+                peca_alterar_pra_esquerda(pecaAtual)
+				' Em seguida, devemos definir a peça nesta posição no tabuleiro.				
+            ELSE
+				' Aqui, quer dizer que o deslocamento pra direita é válido
+				' Então, devemos apagar o rastro da peça na coordenada antiga.
+				peca_apagar_rastro_superior(tabuleiro(), pecaAnterior)
+				
+				' Aqui, devemos definir a nova posição da peça.
+				peca_alterar_definitivo(tabuleiro(), pecaAtual, pecaAnterior)
+			end if
+				
+        END IF
+
+        ' Toda vez que o loop chega aqui, a peça desloca um ou mais linhas
+		' para baixo.
+		' Esta quantidade de linhas é definida pela variável %PECA_DESLOCAMENTO_VERTICAL.
+		
+		' Devemos armazenar as coordenadas antes de alterar a peça 
+		' para uma nova posição.		
+        peca_copiar(pecaAnterior, pecaAtual)
+        peca_alterar_pra_baixo(pecaAtual)
+
+        ' Vamos verificar se há colisão, se houver, quer dizer que
+        ' a célula da peça com valor 1, tem na mesma célula correspondente
+        ' no tabuleiro, um valor 1.
+        ' Então, quer dizer,
+        IF peca_colidiu(tabuleiro(), pecaAtual) = 1 THEN
+            INCR pecaContador
+            IF pecaContador = 13 THEN
+                pecaContador = pecaContador
+            END IF
+
+            ' Aqui, iremos reverter a posição anterior
+            peca_alterar_pra_cima(pecaAtual)
+			
+            ' Definir as coordenadas no tabuleiro.
+            peca_alterar_definitivo(tabuleiro(), pecaAtual, pecaAnterior)
+            
+            ' Sortear nova peça.
+            Peca_Sortear(pecas(), pecaAtual)
+            peca_copiar(pecaAnterior, pecaAtual)
+			
+			' Verificar colisão, se houver jogo termina
+			if peca_colidiu(tabuleiro(), pecaAtual) = 1 THEN	
+				MsgBox "GAME OVER", %MB_ICONASTERISK
+				END
+            end if
+			
+			
+            peca_alterar_definitivo(tabuleiro(), pecaAtual, pecaAnterior)
+        ELSE
+            peca_apagar_rastro_superior(tabuleiro(), pecaAnterior)
+            peca_alterar_definitivo(tabuleiro(), pecaAtual, pecaAnterior)
+        END IF
+
+        IF strTexto <> "" THEN
+
+            GRAPHIC COLOR %RGB_YELLOW, %RGB_YELLOW
+            GRAPHIC SET POS (10, %JOGO_ALTURA - 50)
+            GRAPHIC PRINT strTextoAnterior
+
+            GRAPHIC SET POS (10, %JOGO_ALTURA - 50)
+            GRAPHIC COLOR %RGB_RED, %RGB_YELLOW
+
+            SELECT CASE LEN(strTexto)
+                CASE 1
+                    strTexto = strTexto + ", asc=" + FORMAT$(ASC(strTexto))
+                CASE 2
+                    strTexto = MID$(strTexto, 2, 1) + ", tecla ext.: " + FORMAT$(ASC(MID$(strTexto, 2, 1)))
+            END SELECT
+
+            GRAPHIC PRINT strTexto
+            strTextoAnterior = strTexto
+
+            GRAPHIC REDRAW
+        END IF
+        GRAPHIC REDRAW
+
+        'dialog doevents
+        SLEEP 100
+        'graphic clear %rgb_white
+        'dialog doevents
+    LOOP
+
+END FUNCTION
+
+' Zera o tabuleiro.
+SUB Tabuleiro_ZerarCelulas(BYREF tabuleiro() AS celulaTabuleiro)
+    LOCAL linha AS LONG, coluna AS LONG
+
+    FOR linha = 1 TO %TABULEIRO_LINHAS
+        FOR coluna = 1 TO %TABULEIRO_COLUNAS
+            tabuleiro(linha, coluna).celulaOcupada = 0
+        NEXT coluna
+    NEXT linha
+
+    ' Pra evitar que a peça saía na parte inferior do tabuleiro
+    FOR coluna = 1 TO %TABULEIRO_COLUNAS
+        tabuleiro(%TABULEIRO_LINHAS + 1, coluna).celulaOcupada = 1
+    NEXT linha
+
+END SUB
+
+
+'***********************************************************************************************
+
+
+SUB TabuleiroProjetarCoordenadas(BYREF tabuleiro() AS celulaTabuleiro)
+    LOCAL linha, coluna AS LONG
+
+    LOCAL celulaXSuperiorEsquerda AS LONG
+    LOCAL celulaYSuperiorEsquerda AS LONG
+    LOCAL celulaXInferiorDireita AS LONG
+    LOCAL celulaYInferiorDireita AS LONG
+
+  ' Define as coordenadas iniciais.
+    celulaXSuperiorEsquerda = %TABULEIRO_ESQUERDA
+    celulaYSuperiorEsquerda = %TABULEIRO_TOPO
+    celulaXInferiorDireita = celulaXSuperiorEsquerda + %CELULA_LARGURA
+    celulaYInferiorDireita = celulaYSuperiorEsquerda + %CELULA_ALTURA
+
+    ' Desenhar células.
+    FOR linha = 1 TO %CELULAS_POR_LINHA
+
+        FOR coluna = 1 TO %CELULAS_POR_COLUNA
+            tabuleiro(linha, coluna).X_Superior_Esquerda = celulaXSuperiorEsquerda
+            tabuleiro(linha, coluna).Y_Superior_Esquerda = celulaYSuperiorEsquerda
+            tabuleiro(linha, coluna).X_Inferior_Direita = celulaXInferiorDireita
+            tabuleiro(linha, coluna).Y_Inferior_Direita = celulaYInferiorDireita
+
+            ' Indica onde a próxima célula na horizontal, será desenhada.
+            celulaXSuperiorEsquerda = celulaXSuperiorEsquerda + %CELULA_LARGURA + %TABULEIRO_ESPACO_HORIZONTAL_ENTRE_CELULAS
+            ' A posição y da célula superior esquerda e célula inferior direita não precisa ser alterada.
+            celulaXInferiorDireita = celulaXSuperiorEsquerda + %CELULA_LARGURA
+        NEXT coluna
+
+        ' Devemos resetar a posição x do canto superior da célula para a posição x
+        ' do lado esquerdo do tabuleiro.
+        celulaXSuperiorEsquerda = %TABULEIRO_ESQUERDA
+        ' e a posição x do canto inferior direito da célula será igual
+        ' a soma da posição x do lado esquerdo da célula + a largura da célula
+        celulaXInferiorDireita = celulaXSuperiorEsquerda + %CELULA_LARGURA
+
+        ' Como aqui, iremos avançar para a próxima linha, então, devemos calcular a nova posição
+        ' y de onde a célula estará posicionada.
+        ' Há dois posições de y, uma para o canto superior esquerdo e outro para o canto inferior direito.
+        ' A nova posição y da célula será igual a atual posição de y superior esquerda mais
+        ' o espaçamento entre células na vertical no tabuleiro mais a altura da célual
+        celulaYSuperiorEsquerda = celulaYSuperiorEsquerda + %CELULA_ALTURA + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
+        ' A posição y da célula inferior direita será igual a soma da célula 'celulaYSuperiorEsquerda' mais
+        ' a altura da célula.
+        celulaYInferiorDireita = celulaYSuperiorEsquerda + %CELULA_ALTURA
+
+    NEXT linha
+    GRAPHIC REDRAW
+END SUB
+
+
+'***********************************************************************************************
+'   Desenha as células do tabuleiro, as coordenadas de cada célula
+' já foram definidas.
+'***********************************************************************************************
+
+SUB TabuleiroDesenharCelulas(BYREF tabuleiro() AS celulaTabuleiro)
+    LOCAL linha, coluna AS LONG
+
+    LOCAL celulaXSuperiorEsquerda AS LONG
+    LOCAL celulaYSuperiorEsquerda AS LONG
+    LOCAL celulaXInferiorDireita AS LONG
+    LOCAL celulaYInferiorDireita AS LONG
+
+    ' Desenhar células.
+    FOR linha = 1 TO %CELULAS_POR_LINHA
+
+        FOR coluna = 1 TO %CELULAS_POR_COLUNA
+            celulaXSuperiorEsquerda = tabuleiro(linha, coluna).x_superior_esquerda
+            celulaYSuperiorEsquerda = tabuleiro(linha, coluna).y_superior_esquerda
+            celulaXInferiorDireita = tabuleiro(linha, coluna).x_inferior_direita
+            celulaYInferiorDireita = tabuleiro(linha, coluna).y_inferior_direita
+
+            ' Se a célula indica que está preenchida, devemos colocar a cor de preenchimento.
+            IF tabuleiro(linha, coluna).celulaOcupada = 1 THEN
+                GRAPHIC BOX (celulaXSuperiorEsquerda, celulaYSuperiorEsquerda) - _
+                            (celulaXInferiorDireita, celulaYInferiorDireita), 0, _
+                            %CELULA_COR_BORDA, tabuleiro(linha, coluna).celulaCor
+            ELSE
+                GRAPHIC BOX(celulaXSuperiorEsquerda, celulaYSuperiorEsquerda) - _
+                                    (celulaXInferiorDireita, celulaYInferiorDireita), , %TABULEIRO_COR_DE_FUNDO, %TABULEIRO_COR_DE_FUNDO
+            END IF
+
+        NEXT coluna
+
+    NEXT linha
+    GRAPHIC REDRAW
+END SUB

@@ -1,0 +1,23 @@
+##############################################
+## 
+## PROGRAMA: 		TETRIS
+##
+## AUTOR:			FÁBIO MOURA DE OLIVEIRA
+##
+## DATA DE CRIAÇÃO: 14/12/2016
+##
+##############################################
+
+Este programa de computador é um jogo semelhante ao jogo
+clássico Tetris.
+
+
+Como jogar:
+Utilize as setas de direção:
+Esquerda, pra mover peça pra esquerda.
+Direita, pra mover peça para direita.
+Pra cima, pra girar a peça 90 graus.
+
+
+Na parte inferior, há os marcadores inferior e superior, que
+indica onde a peça será colocada.

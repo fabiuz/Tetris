@@ -1743,13 +1743,11 @@ IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Dire
 			
 			if linhaTemp <> 0 then
 				'celulaYmeio = tabuleiro(linhaTemp, coluna).y_meio		
-				graphic line (celulaXMeio, celulaYmeio)- _
-				(celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
+				graphic line (celulaXMeio, celulaYmeio)- (celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO
 			ELSE
 				' Neste caso, se é zero, não há células com valor 1 nesta coluna
 				' devemos tracejar a linha até final da linha
-				graphic line (celulaXMeio, celulaYMeio) - _
-				(celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
+				graphic line (celulaXMeio, celulaYMeio) - (celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO
 			END IF		 
 
 			GRAPHIC STYLE 0	

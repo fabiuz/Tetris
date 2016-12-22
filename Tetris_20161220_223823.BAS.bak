@@ -1555,7 +1555,7 @@ SUB TabuleiroDesenharCelulas(BYREF tabuleiro() AS celulaTabuleiro, BYVAL pecaAtu
 	linha_antes_da_linha_com_celula_valor_um = %TABULEIRO_LINHAS
 	
 	' Ativar o modo overlap
-	'graphic set overlap 1
+	graphic set overlap
 	
 
     ' Desenhar células.
@@ -1644,12 +1644,12 @@ Desenhar_Marcadores_Inferiores:
 	ELSE
 		' Apaga o triângulo com a cor de fundo
 		
-		graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYInferior), %TABULEIRO_COR_DE_FUNDO
+		graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYInferior), %RGB_RED
 		
 		' Desenha a base.
-		graphic line - (trianguloXEsquerdo, trianguloYInferior), %TABULEIRO_COR_DE_FUNDO
+		graphic line - (trianguloXEsquerdo, trianguloYInferior), %RGB_RED
 		
-		graphic line - (celulaXMeio, celulaYMeio), %TABULEIRO_COR_DE_FUNDO
+		graphic line - (celulaXMeio, celulaYMeio), %RGB_RED
 		
 	END IF
 	
@@ -1685,6 +1685,12 @@ IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Dire
 	trianguloXDireito = celulaXInferiorDireita
 	trianguloYInferior = celulaYInferiorDireita
 	trianguloYSuperior = celulaYSuperiorEsquerda
+	
+	' Desenha somente se a coordenada da célula não está ocupada.
+	if tabuleiro(linhaTemp,Coluna).celulaOcupada = 0 then	
+		'graphic ellipse (celulaXSuperiorEsquerda, celulaYSuperiorEsquerda) - _
+		'			(celulaXInferiorDireita, celulaYInferiorDireita), %RGB_RED, %RGB_RED
+	end if
 
 
 	' Desenha somente se a coordenada da célula não está ocupada.
@@ -1700,65 +1706,34 @@ IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Dire
 			
 			graphic line - (celulaXMeio, celulaYMeio), %RGB_RED
 			
-			
-			
 			' Desenha um linha vertical centralizada na célula
 			' De vai da menor linha do tabuleiro que tem célula valor 1
 			' até a menor linha da coluna que tem célula valor 1.
-			graphic style 0
-			'GRAPHIC SET OVERLAP 1
 			
-			linhaTemp = menor_linha_da_coluna_com_celula_valor_um(coluna)
-			
-			if linhaTemp <> 0 then
-				graphic line (celulaXMeio, celulaYmeio)- (celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS), %RGB_RED
-			ELSE
-				' Neste caso, se é zero, não há células com valor 1 nesta coluna
-				' devemos tracejar a linha até final da linha
-				graphic line (celulaXMeio, celulaYMeio) - _
-				(celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS), %RGB_RED
-			END IF
-			 
-
-			GRAPHIC STYLE 0				
 			
 			
 		ELSE
 			' Apaga o triângulo com a cor de fundo
 			
-			graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYSuperior), %TABULEIRO_COR_DE_FUNDO
+			graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYSuperior), %RGB_RED
 			
 			' Desenha a base.
-			graphic line - (trianguloXEsquerdo, trianguloYSuperior), %TABULEIRO_COR_DE_FUNDO
+			graphic line - (trianguloXEsquerdo, trianguloYSuperior), %RGB_RED
 			
-			graphic liNE - (celulaXMeio, celulaYMeio), %TABULEIRO_COR_DE_FUNDO			
+			graphic line - (celulaXMeio, celulaYMeio), %RGB_RED			
 
-
-			' Desenha um linha vertical centralizada na célula
-			' De vai da menor linha do tabuleiro que tem célula valor 1
-			' até a menor linha da coluna que tem célula valor 1.
-			graphic style 0
-			
-			linhaTemp = menor_linha_da_coluna_com_celula_valor_um(coluna)
-			
-			if linhaTemp <> 0 then
-				'celulaYmeio = tabuleiro(linhaTemp, coluna).y_meio		
-				graphic line (celulaXMeio, celulaYmeio)- _
-				(celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
-			ELSE
-				' Neste caso, se é zero, não há células com valor 1 nesta coluna
-				' devemos tracejar a linha até final da linha
-				graphic line (celulaXMeio, celulaYMeio) - _
-				(celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
-			END IF		 
-
-			GRAPHIC STYLE 0	
 			
 		END IF
 		
 		' Desenha uma linha vertical no meio da célula atual e vai, até a célula
 		' que tem um célula valor 1.
-	
+		graphic style 2
+		
+		linhaTemp = menor_linha_da_coluna_com_celula_valor_um(coluna)
+		if linhaTemp <> 0 then
+			celulaYmeio = tabuleiro(linhaTemp, coluna).y_meio		
+			graphic line (celulaXMeio, celulaYmeio)- (celulaXMeio, celulaYMeio), 
+		
 		
 	end if
 

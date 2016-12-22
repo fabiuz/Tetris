@@ -3,14 +3,14 @@ Copyright (c) 1996-2011 PowerBasic Inc.
 Englewood, Florida USA
 All Rights Reserved
 
-Primary source:  C:\Meus_Documentos\Powerbasic\Tetris\Tetris.bas   {196241 total lines}
+Primary source:  C:\Meus_Documentos\Powerbasic\Tetris\Tetris.bas   {196366 total lines}
 Target compilation:  Tetris.EXE
-Compile time:  5.4 seconds, at 2180455 lines/minute
+Compile time:  0.8 seconds, at 14727450 lines/minute
 
-9632 bytes compiled code, 32856 bytes RTLibrary,
+10768 bytes compiled code, 32856 bytes RTLibrary,
 96 bytes string literals, and 2916 bytes dgroup.
 Executable stack size:  1048576 bytes.
-Disk image: 49152 bytes   Memory image: 35868 bytes.
+Disk image: 50688 bytes   Memory image: 35868 bytes.
 
 Component Files:
 ----------------

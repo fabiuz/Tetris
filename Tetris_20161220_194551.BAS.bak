@@ -1204,7 +1204,6 @@ FUNCTION PBMAIN () AS LONG                            '
         ' ou houve deslocamento para baixo da peça.
         IF pecaSeDeslocou = 1 THEN
             pecaSeDeslocou = 0
-			Tabuleiro_Desenhar_Borda(tabuleiro())
             TabuleiroDesenharCelulas(tabuleiro(), pecaAtual)
             'Tabuleiro_Desenhar_Borda(tabuleiro())
         END IF
@@ -1545,31 +1544,11 @@ SUB TabuleiroDesenharCelulas(BYREF tabuleiro() AS celulaTabuleiro, BYVAL pecaAtu
     ' identificar onde a peça cairia.
     LOCAL menor_linha_da_coluna_com_celula_valor_um() AS LONG
     REDIM menor_linha_da_coluna_com_celula_valor_um(1 TO %CELULAS_POR_COLUNA)
-	
-	' Armazenar a menor linha que contém a primeira célula com valor 1.
-	' Iremos inicialmente definir ela como última linha e a medida que encontrarmos
-	' uma linha menor iremos definir-la novamente,
-	' Isto, servirá pois iremos colocar marcadores nas colunas onde a peça
-	' cairá.
-	local linha_antes_da_linha_com_celula_valor_um as long
-	linha_antes_da_linha_com_celula_valor_um = %TABULEIRO_LINHAS
-	
-	' Ativar o modo overlap
-	'graphic set overlap 1
-	
 
     ' Desenhar células.
     FOR linha = 1 TO %CELULAS_POR_LINHA + 1
 
         FOR coluna = 1 TO %CELULAS_POR_COLUNA
-			
-			if linha = %CELULAS_POR_LINHA + 1 THEN				
-				GOSUB Desenhar_Marcadores_Superiores
-				gosub Desenhar_Marcadores_Inferiores
-				
-				ITERATE FOR
-			end if
-			
             celulaXSuperiorEsquerda = tabuleiro(linha, coluna).x_superior_esquerda
             celulaYSuperiorEsquerda = tabuleiro(linha, coluna).y_superior_esquerda
             celulaXInferiorDireita = tabuleiro(linha, coluna).x_inferior_direita
@@ -1578,193 +1557,149 @@ SUB TabuleiroDesenharCelulas(BYREF tabuleiro() AS celulaTabuleiro, BYVAL pecaAtu
             celulaXMeio = tabuleiro(linha, coluna).X_Meio
             celulaYMeio = tabuleiro(linha, coluna).Y_Meio
 
-			
-			' Se a célula indica que está preenchida, devemos colocar a cor de preenchimento.
+            ' A última linha do tabuleiro, serve como limite inferior da peça, mas usaremos
+            ' as coordenadas desta linha, para identificar em qual coluna a tabela está.
+            ' E renderizar a imagem nesta posição.
+            IF linha = %CELULAS_POR_LINHA + 1 THEN
+                ' Agora, que percorrermos todas as linhas, já podemos definir marcadores
+                ' superiores e inferiores para ajudar o usuário a posicionar a peça.
+
+                ' Coordenadadas iniciais do triangulo.
+                trianguloXEsquerdo = celulaXSuperiorEsquerda
+                trianguloXDireito = celulaXInferiorDireita
+                trianguloYInferior = celulaYInferiorDireita
+                trianguloYSuperior = celulaYSuperiorEsquerda
+
+                IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Direita THEN
+                    ' Desenha a base da esquerda pra direita.
+                    GRAPHIC LINE(trianguloXEsquerdo, trianguloYInferior)-(trianguloXDireito, trianguloYInferior), %RGB_RED
+
+                    ' Desenha o lado direito, a altura do triângulo será 1 quarto da altura da célula.
+                    GRAPHIC LINE - (celulaXMeio, celulaYMeio - (celulaYMeio - trianguloYInferior)/2), %RGB_RED
+
+                    ' Desenha o lado esquerdo
+                    GRAPHIC LINE - (trianguloXEsquerdo, trianguloYInferior), %RGB_RED
+
+                    ' Desenha uma ponta na frente do triângulo.
+                    GRAPHIC LINE (celulaXMeio, trianguloYSuperior)-(celulaXMeio, celulaYMeio), %RGB_RED
+                ELSE
+                    ' Apaga o triângulo com a cor de fundo
+
+                    ' Desenha a base da esquerda pra direita.
+                    GRAPHIC LINE(trianguloXEsquerdo, trianguloYInferior)-(trianguloXDireito, trianguloYInferior), %JOGO_COR_DE_FUNDO
+
+                    ' Desenha o lado direito
+                    GRAPHIC LINE - (celulaXMeio, celulaYMeio - (celulaYMeio - trianguloYInferior)/2), %JOGO_COR_DE_FUNDO
+
+                    ' Desenha o lado esquerdo
+                    GRAPHIC LINE - (trianguloXEsquerdo, trianguloYInferior), %JOGO_COR_DE_FUNDO
+
+                    ' Desenha uma ponta na frente do triângulo.
+                    GRAPHIC LINE (celulaXMeio, trianguloYSuperior)-(celulaXMeio, celulaYMeio), %JOGO_COR_DE_FUNDO
+                END IF
+
+
+
+                ' Desenha o marcador superior, somente para as colunas onde a peça está.
+                ' O marcador estará uma linha antes da primeira linha de cada coluna, onde
+                ' a célula tenha o valor 1.
+
+                ' Devemos, desenhar, o triângulo se a coluna está dentro da faixa onde cada coluna da peça está
+                ' *********** MARCADOR SUPERIOR **************
+                IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Direita THEN
+                    ' Vamos descobrir a menor linha, que está indicada na variável
+                    LOCAL colunaTemp AS LONG
+                    LOCAL menorLinha AS LONG
+                    menorLinha = menor_linha_da_coluna_com_celula_valor_um(coluna)
+
+                    ' Se menorLinha é zero, quer dizer, que nenhum célula da coluna foi definida o valor 1.
+                    ' Devemos continuar o loop.
+                    IF menorLinha = 0 THEN
+                        ITERATE FOR
+                    END IF
+
+                    FOR colunaTemp = pecaAtual.posicao.x_Esquerda TO pecaAtual.posicao.x_Direita
+                        IF menor_linha_da_coluna_com_celula_valor_um(colunaTemp) > menorLinha THEN
+                            menorLinha = menor_linha_da_coluna_com_celula_valor_um(colunaTemp)
+                        END IF
+                    NEXT colunatemp
+
+                    ' Troca os valores das linhas
+                    SWAP menorLinha, linha
+
+                    celulaXSuperiorEsquerda = tabuleiro(linha, coluna).x_superior_esquerda
+                    celulaYSuperiorEsquerda = tabuleiro(linha, coluna).y_superior_esquerda
+                    celulaXInferiorDireita = tabuleiro(linha, coluna).x_inferior_direita
+                    celulaYInferiorDireita = tabuleiro(linha, coluna).y_inferior_direita
+
+                    celulaXMeio = tabuleiro(linha, coluna).X_Meio
+                    celulaYMeio = tabuleiro(linha, coluna).Y_Meio
+
+                    ' Troca novamente os valores
+                    SWAP menorLinha, linha
+					
+                    ' Desenha a base da esquerda pra direita.
+                    GRAPHIC LINE(trianguloXEsquerdo, trianguloYSuperior)-(trianguloXDireito, trianguloYSuperior), %RGB_RED
+
+                    ' Desenha o lado direito, a altura do triângulo será 1 quarto da altura da célula.
+                    GRAPHIC LINE - (celulaXMeio, trianguloYSuperior + (trianguloYSuperior-celulaYMeio)/2), %RGB_RED
+
+                    ' Desenha o lado esquerdo
+                    GRAPHIC LINE - (trianguloXEsquerdo, trianguloYSuperior), %RGB_RED
+
+                    ' Desenha uma ponta na frente do triângulo.
+                    GRAPHIC LINE (celulaXMeio, trianguloYSuperior)-(celulaXMeio, celulaYMeio), %RGB_RED
+                ELSE
+                    ' Apaga o triângulo com a cor de fundo
+
+                    ' Desenha a base da esquerda pra direita.
+                    GRAPHIC LINE(trianguloXEsquerdo, trianguloYInferior)-(trianguloXDireito, trianguloYInferior), %JOGO_COR_DE_FUNDO
+
+                    ' Desenha o lado direito
+                    GRAPHIC LINE - (celulaXMeio, trianguloYSuperior + (trianguloYSuperior-celulaYMeio)/2), %JOGO_COR_DE_FUNDO
+
+                    ' Desenha o lado esquerdo
+                    GRAPHIC LINE - (trianguloXEsquerdo, trianguloYInferior), %JOGO_COR_DE_FUNDO
+
+                    ' Desenha uma ponta na frente do triângulo.
+                    GRAPHIC LINE (celulaXMeio, trianguloYSuperior)-(celulaXMeio, celulaYMeio), %JOGO_COR_DE_FUNDO
+
+                END IF
+
+
+
+
+
+                ITERATE FOR
+            END IF
+
+
+
+            ' Se a célula indica que está preenchida, devemos colocar a cor de preenchimento.
             IF tabuleiro(linha, coluna).celulaOcupada = 1 THEN
                 GRAPHIC BOX (celulaXSuperiorEsquerda, celulaYSuperiorEsquerda) - _
                             (celulaXInferiorDireita, celulaYInferiorDireita), 0, _
                             %CELULA_COR_BORDA, tabuleiro(linha, coluna).celulaCor
 
                 ' Serve para verificar a menor linha de cada com coluna, onde tal célula tenha valor 1.
+
                 IF linha > pecaAtual.posicao.y_inferior THEN
-					' Se o valor é zero, quer dizer, que ainda não foi definido devemos definir.
-					if menor_linha_da_coluna_com_celula_valor_um(coluna) = 0 then					
-                    	menor_linha_da_coluna_com_celula_valor_um(coluna) = IIF(linha > 1, linha - 1, %TABULEIRO_LINHAS)
-					end if
-					
-					' Verifica se está é a menor linha do tabuleiro, com célula valor 1.
-					if linha < linha_antes_da_linha_com_celula_valor_um then
-						' Esta linha indica que está preenchida, então devemos pegar a linha anterior
-						' e armazenar na variável abaixo, mas só podemos fazer isto, se a linha
-						' anterior não é a linha da peça.
-						if linha - 1 > pecaAtual.posicao.y_inferior then
-							linha_antes_da_linha_com_celula_valor_um = linha - 1
-						end if
-					end if
+                    menor_linha_da_coluna_com_celula_valor_um(coluna) = IIF(linha > 1, linha - 1, %TABULEIRO_LINHAS)
                 END IF
+
             ELSE
                 ' Se a célula não está ocupada, criar um quadrado com
                 GRAPHIC BOX(celulaXSuperiorEsquerda, celulaYSuperiorEsquerda) - _
                                     (celulaXInferiorDireita, celulaYInferiorDireita), 0 , %TABULEIRO_COR_DE_FUNDO, %TABULEIRO_COR_DE_FUNDO
 
-            END IF
-			
 
+
+
+            END IF
 
         NEXT coluna
     NEXT linha
     GRAPHIC REDRAW
-	
-	exit sub
-	
-Desenhar_Marcadores_Inferiores:
-	celulaXSuperiorEsquerda = tabuleiro(linha, coluna).x_superior_esquerda
-	celulaYSuperiorEsquerda = tabuleiro(linha, coluna).y_superior_esquerda
-	celulaXInferiorDireita = tabuleiro(linha, coluna).x_inferior_direita
-	celulaYInferiorDireita = tabuleiro(linha, coluna).y_inferior_direita
-	celulaXMeio = tabuleiro(linha, coluna).X_Meio
-	celulaYMeio = tabuleiro(linha, coluna).Y_Meio
-
-	' Coordenadadas iniciais do triangulo.
-	trianguloXEsquerdo = celulaXSuperiorEsquerda
-	trianguloXDireito = celulaXInferiorDireita
-	trianguloYInferior = celulaYInferiorDireita
-	trianguloYSuperior = celulaYSuperiorEsquerda
-	
-	
-	IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Direita THEN
-		'
-		graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYInferior), %RGB_RED
-		
-		' Desenha a base.
-		graphic line - (trianguloXEsquerdo, trianguloYInferior), %RGB_RED
-		
-		graphic line - (celulaXMeio, celulaYMeio), %RGB_RED
-		
-	ELSE
-		' Apaga o triângulo com a cor de fundo
-		
-		graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYInferior), %TABULEIRO_COR_DE_FUNDO
-		
-		' Desenha a base.
-		graphic line - (trianguloXEsquerdo, trianguloYInferior), %TABULEIRO_COR_DE_FUNDO
-		
-		graphic line - (celulaXMeio, celulaYMeio), %TABULEIRO_COR_DE_FUNDO
-		
-	END IF
-	
-	
-	
-	
-	return
-	
-Desenhar_Marcadores_Superiores:
-' Desenha o marcador superior, somente para as colunas onde a peça está.
-' O marcador estará uma linha antes da primeira linha de cada coluna, onde
-' a célula tenha o valor 1.
-
-' Devemos, desenhar, o triângulo se a coluna está dentro da faixa onde cada coluna da peça está
-' *********** MARCADOR SUPERIOR **************
-
-' O marcador ficará somente nas colunas no tabuleiro, que corresponde às colunas
-' da peça e ficará na menor linha, antes da linha que contém a célula com valor 1.
-IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Direita THEN
-	local linhaTemp as long
-	linhaTemp = linha_antes_da_linha_com_celula_valor_um
-
-	celulaXSuperiorEsquerda = tabuleiro(linhaTemp, coluna).x_superior_esquerda
-	celulaYSuperiorEsquerda = tabuleiro(linhaTemp, coluna).y_superior_esquerda
-	celulaXInferiorDireita = tabuleiro(linhaTemp, coluna).x_inferior_direita
-	celulaYInferiorDireita = tabuleiro(linhaTemp, coluna).y_inferior_direita
-
-	celulaXMeio = tabuleiro(linhaTemp, coluna).X_Meio
-	celulaYMeio = tabuleiro(linhaTemp, coluna).Y_Meio
-	
-	' Coordenadadas iniciais do triangulo.
-	trianguloXEsquerdo = celulaXSuperiorEsquerda
-	trianguloXDireito = celulaXInferiorDireita
-	trianguloYInferior = celulaYInferiorDireita
-	trianguloYSuperior = celulaYSuperiorEsquerda
-
-
-	' Desenha somente se a coordenada da célula não está ocupada.
-	if tabuleiro(linhaTemp,Coluna).celulaOcupada = 0 then		
-		' Desenha um triângulo na parte superior.
-		IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Direita THEN
-			
-			' Desenharemos um triângulo agudo, com o menor ângulo apontando pra baixo.
-			graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYSuperior), %RGB_RED
-			
-			' Desenha a base.
-			graphic line - (trianguloXEsquerdo, trianguloYSuperior), %RGB_RED
-			
-			graphic line - (celulaXMeio, celulaYMeio), %RGB_RED
-			
-			
-			
-			' Desenha um linha vertical centralizada na célula
-			' De vai da menor linha do tabuleiro que tem célula valor 1
-			' até a menor linha da coluna que tem célula valor 1.
-			graphic style 0
-			'GRAPHIC SET OVERLAP 1
-			
-			linhaTemp = menor_linha_da_coluna_com_celula_valor_um(coluna)
-			
-			if linhaTemp <> 0 then
-				graphic line (celulaXMeio, celulaYmeio)- (celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS), %RGB_RED
-			ELSE
-				' Neste caso, se é zero, não há células com valor 1 nesta coluna
-				' devemos tracejar a linha até final da linha
-				graphic line (celulaXMeio, celulaYMeio) - _
-				(celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS), %RGB_RED
-			END IF
-			 
-
-			GRAPHIC STYLE 0				
-			
-			
-		ELSE
-			' Apaga o triângulo com a cor de fundo
-			
-			graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYSuperior), %TABULEIRO_COR_DE_FUNDO
-			
-			' Desenha a base.
-			graphic line - (trianguloXEsquerdo, trianguloYSuperior), %TABULEIRO_COR_DE_FUNDO
-			
-			graphic liNE - (celulaXMeio, celulaYMeio), %TABULEIRO_COR_DE_FUNDO			
-
-
-			' Desenha um linha vertical centralizada na célula
-			' De vai da menor linha do tabuleiro que tem célula valor 1
-			' até a menor linha da coluna que tem célula valor 1.
-			graphic style 0
-			
-			linhaTemp = menor_linha_da_coluna_com_celula_valor_um(coluna)
-			
-			if linhaTemp <> 0 then
-				'celulaYmeio = tabuleiro(linhaTemp, coluna).y_meio		
-				graphic line (celulaXMeio, celulaYmeio)- _
-				(celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
-			ELSE
-				' Neste caso, se é zero, não há células com valor 1 nesta coluna
-				' devemos tracejar a linha até final da linha
-				graphic line (celulaXMeio, celulaYMeio) - _
-				(celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
-			END IF		 
-
-			GRAPHIC STYLE 0	
-			
-		END IF
-		
-		' Desenha uma linha vertical no meio da célula atual e vai, até a célula
-		' que tem um célula valor 1.
-	
-		
-	end if
-
-end if
-return
-	
 END SUB
 SUB Tabuleiro_Desenhar_Borda(BYREF tabuleiro() AS celulaTabuleiro)
     ' Desenhar a borda 10 pixes antes das extremidades.

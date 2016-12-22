@@ -1553,10 +1553,6 @@ SUB TabuleiroDesenharCelulas(BYREF tabuleiro() AS celulaTabuleiro, BYVAL pecaAtu
 	' cairá.
 	local linha_antes_da_linha_com_celula_valor_um as long
 	linha_antes_da_linha_com_celula_valor_um = %TABULEIRO_LINHAS
-	
-	' Ativar o modo overlap
-	'graphic set overlap 1
-	
 
     ' Desenhar células.
     FOR linha = 1 TO %CELULAS_POR_LINHA + 1
@@ -1566,8 +1562,6 @@ SUB TabuleiroDesenharCelulas(BYREF tabuleiro() AS celulaTabuleiro, BYVAL pecaAtu
 			if linha = %CELULAS_POR_LINHA + 1 THEN				
 				GOSUB Desenhar_Marcadores_Superiores
 				gosub Desenhar_Marcadores_Inferiores
-				
-				ITERATE FOR
 			end if
 			
             celulaXSuperiorEsquerda = tabuleiro(linha, coluna).x_superior_esquerda
@@ -1629,32 +1623,38 @@ Desenhar_Marcadores_Inferiores:
 	trianguloXEsquerdo = celulaXSuperiorEsquerda
 	trianguloXDireito = celulaXInferiorDireita
 	trianguloYInferior = celulaYInferiorDireita
-	trianguloYSuperior = celulaYSuperiorEsquerda
+	trianguloYSuperior = celulaYSuperiorEsquerda	
+	
+	
 	
 	
 	IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Direita THEN
-		'
-		graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYInferior), %RGB_RED
-		
-		' Desenha a base.
-		graphic line - (trianguloXEsquerdo, trianguloYInferior), %RGB_RED
-		
-		graphic line - (celulaXMeio, celulaYMeio), %RGB_RED
-		
+		' Desenha a base da esquerda pra direita.
+		GRAPHIC LINE(trianguloXEsquerdo, trianguloYInferior)-(trianguloXDireito, trianguloYInferior), %RGB_RED
+
+		' Desenha o lado direito, a altura do triângulo será 1 quarto da altura da célula.
+		GRAPHIC LINE - (celulaXMeio, celulaYMeio - (celulaYMeio - trianguloYInferior)/2), %RGB_RED
+
+		' Desenha o lado esquerdo
+		GRAPHIC LINE - (trianguloXEsquerdo, trianguloYInferior), %RGB_RED
+
+		' Desenha uma ponta na frente do triângulo.
+		'GRAPHIC LINE (celulaXMeio, trianguloYSuperior)-(celulaXMeio, celulaYMeio), %RGB_RED
 	ELSE
 		' Apaga o triângulo com a cor de fundo
-		
-		graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYInferior), %TABULEIRO_COR_DE_FUNDO
-		
-		' Desenha a base.
-		graphic line - (trianguloXEsquerdo, trianguloYInferior), %TABULEIRO_COR_DE_FUNDO
-		
-		graphic line - (celulaXMeio, celulaYMeio), %TABULEIRO_COR_DE_FUNDO
-		
+
+		' Desenha a base da esquerda pra direita.
+		GRAPHIC LINE(trianguloXEsquerdo, trianguloYInferior)-(trianguloXDireito, trianguloYInferior), %JOGO_COR_DE_FUNDO
+
+		' Desenha o lado direito
+		GRAPHIC LINE - (celulaXMeio, celulaYMeio - (celulaYMeio - trianguloYInferior)/2), %JOGO_COR_DE_FUNDO
+
+		' Desenha o lado esquerdo
+		GRAPHIC LINE - (trianguloXEsquerdo, trianguloYInferior), %JOGO_COR_DE_FUNDO
+
+		' Desenha uma ponta na frente do triângulo.
+		'GRAPHIC LINE (celulaXMeio, trianguloYSuperior)-(celulaXMeio, celulaYMeio), %JOGO_COR_DE_FUNDO
 	END IF
-	
-	
-	
 	
 	return
 	
@@ -1685,81 +1685,11 @@ IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Dire
 	trianguloXDireito = celulaXInferiorDireita
 	trianguloYInferior = celulaYInferiorDireita
 	trianguloYSuperior = celulaYSuperiorEsquerda
-
-
-	' Desenha somente se a coordenada da célula não está ocupada.
-	if tabuleiro(linhaTemp,Coluna).celulaOcupada = 0 then		
-		' Desenha um triângulo na parte superior.
-		IF coluna >= pecaAtual.posicao.x_Esquerda AND coluna <= pecaAtual.posicao.x_Direita THEN
-			
-			' Desenharemos um triângulo agudo, com o menor ângulo apontando pra baixo.
-			graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYSuperior), %RGB_RED
-			
-			' Desenha a base.
-			graphic line - (trianguloXEsquerdo, trianguloYSuperior), %RGB_RED
-			
-			graphic line - (celulaXMeio, celulaYMeio), %RGB_RED
-			
-			
-			
-			' Desenha um linha vertical centralizada na célula
-			' De vai da menor linha do tabuleiro que tem célula valor 1
-			' até a menor linha da coluna que tem célula valor 1.
-			graphic style 0
-			'GRAPHIC SET OVERLAP 1
-			
-			linhaTemp = menor_linha_da_coluna_com_celula_valor_um(coluna)
-			
-			if linhaTemp <> 0 then
-				graphic line (celulaXMeio, celulaYmeio)- (celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS), %RGB_RED
-			ELSE
-				' Neste caso, se é zero, não há células com valor 1 nesta coluna
-				' devemos tracejar a linha até final da linha
-				graphic line (celulaXMeio, celulaYMeio) - _
-				(celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS), %RGB_RED
-			END IF
-			 
-
-			GRAPHIC STYLE 0				
-			
-			
-		ELSE
-			' Apaga o triângulo com a cor de fundo
-			
-			graphic line (celulaXMeio, celulaYMeio)-(trianguloXDireito, trianguloYSuperior), %TABULEIRO_COR_DE_FUNDO
-			
-			' Desenha a base.
-			graphic line - (trianguloXEsquerdo, trianguloYSuperior), %TABULEIRO_COR_DE_FUNDO
-			
-			graphic liNE - (celulaXMeio, celulaYMeio), %TABULEIRO_COR_DE_FUNDO			
-
-
-			' Desenha um linha vertical centralizada na célula
-			' De vai da menor linha do tabuleiro que tem célula valor 1
-			' até a menor linha da coluna que tem célula valor 1.
-			graphic style 0
-			
-			linhaTemp = menor_linha_da_coluna_com_celula_valor_um(coluna)
-			
-			if linhaTemp <> 0 then
-				'celulaYmeio = tabuleiro(linhaTemp, coluna).y_meio		
-				graphic line (celulaXMeio, celulaYmeio)- _
-				(celulaXMeio, tabuleiro(linhaTemp, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
-			ELSE
-				' Neste caso, se é zero, não há células com valor 1 nesta coluna
-				' devemos tracejar a linha até final da linha
-				graphic line (celulaXMeio, celulaYMeio) - _
-				(celulaXMeio, tabuleiro(%TABULEIRO_LINHAS, coluna).y_inferior_direita), %TABULEIRO_COR_DE_FUNDO + %TABULEIRO_ESPACO_VERTICAL_ENTRE_CELULAS
-			END IF		 
-
-			GRAPHIC STYLE 0	
-			
-		END IF
-		
-		' Desenha uma linha vertical no meio da célula atual e vai, até a célula
-		' que tem um célula valor 1.
 	
-		
+	' Desenha somente se a coordenada da célula não está ocupada.
+	if tabuleiro(linhaTemp,Coluna).celulaOcupada = 0 then	
+		graphic ellipse (celulaXSuperiorEsquerda, celulaYSuperiorEsquerda) - _
+					(celulaXInferiorDireita, celulaYInferiorDireita), %RGB_RED, %RGB_RED
 	end if
 
 end if

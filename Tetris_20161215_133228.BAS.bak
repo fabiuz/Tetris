@@ -1,0 +1,82 @@
+'	PROGRAMA:		BLOCKS
+' VERSÃO:			1.0
+'	AUTOR:			FÁBIO MOURA DE OLIVEIRA
+'	DATA: 			14/12/2016
+' DESCRIÇÃO:	ESTE PROGRAMA É UM JOGO DE COMPUTADOR SEMELHANTE AO JOGO CLÁSSICO BLOCKS.
+
+#COMPILE EXE
+#DIM ALL
+#INCLUDE "win32api.inc"
+
+' Nomenclatura do jogo:
+' Tabuleiro:	É o local onde os blocos são inseridos.
+' Célula:			Interseção entre linha e coluna do tabuleiro.
+' Bloco:			Um conjunto de células conectadas a uma outra célula vizinha
+'							formando um imagem.
+' Peça:				Região, geralmente, em forma quadrática, em que um bloco reside.
+
+%CELULAS_POR_LINHA = 10
+%CELULAS_POR_COLUNA = 10
+%CELULAS_TOTAIS = %CELULAS_POR_LINHA * %CELULAS_POR_COLUNA
+
+%BLOCO_LARGURA = 10
+%BLOCO_ALTURA = 10
+
+%BLOCO_LINHAS = 3
+%BLOCO_COLUNAS = 3
+
+' Guarda informações sobre uma célula específica.
+type celula
+	celulaStatus as long	' Indica o estado da célula: 0, não preenchida, 1, preenchida.
+	celulaCor as long			' Indica a cor da célula.
+end type
+
+' Define o bloco que guardará todas as informações da células
+type bloco
+	blocoCelula as celula	
+end type
+
+FUNCTION PBMAIN () AS LONG
+	' Um tabuleiro, é um conjunto de células dispostas em linhas e colunas.
+	'local taburo (1 to %CELULAS_POR_LINHA, 1 TO %CELULAS_POR_COLUNA) as celula 
+	dim  tabuleiro (1 to %CELULAS_POR_LINHA, 1 TO %CELULAS_POR_COLUNA) as celula
+	
+
+
+                                                      '
+	local janelaBloco as long, bitmapbloco as long
+	graphic window new "Blocks v1.0 - Autor Fábio Moura", 0, 0, 500, 500 to janelaBloco
+	Graphic bitmap new 500, 500 to bitmapBloco 
+	
+	local larguraTela, alturaTela as long
+	' Obter tamanho:
+	graphic get ppi to larguraTela, alturaTela
+	
+	' Anexa contexto gráfico.
+	graphic attach janelaBloco, 0, redraw
+	
+	local linha as long
+	do
+	
+	
+	
+		for linha = 0 to 255
+			GRAPHIC line (0, linha) - (255, linha), rgb(0, 0, linha)
+    next linha
+		for linha = 255 to  510 
+			GRAPHIC line (0, linha) - (510, linha), rgb(0, linha, 0)		
+		next linha
+		graphic redraw 
+	loop while asc(graphic$(INKEY$)) <> 27
+		
+     
+
+
+END FUNCTION
+
+
+'***********************************************************************************************
+'***********************************************************************************************
+'***********************************************************************************************
+
+
